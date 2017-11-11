@@ -1,0 +1,57 @@
+ML usages
+
+tensorflow
+. ~/Desktop/Movidius/tensorflow/bin/activate
+
+To Build summarize_graph:
+bazel build --config=opt tensorflow/tools/graph_transforms:summarize_graph
+
+Find input and output from graph (pb)
+bazel-bin/tensorflow/tools/graph_transforms/summarize_graph --in_graph=<path_to_graph>
+
+e.g.
+bazel-bin/tensorflow/tools/graph_transforms/summarize_graph --in_graph=/home/edwintam/Desktop/Movidius/ncsdk/examples/tensorflow/inception_v3/output/inception_v3_2016_08.pb
+
+Install
+cd /home/edwintam/Development/tensorflow
+// bazel build --config=opt --copt=-mavx --copt=-mavx2 --copt=-mfma --copt=-mfpmath=both --cxxopt="-D_GLIBCXX_USE_CXX11_ABI=0" //tensorflow/tools/pip_package:build_pip_package
+bazel build --config=opt --copt=-march=native --cxxopt="-D_GLIBCXX_USE_CXX11_ABI=0" //tensorflow/tools/pip_package:build_pip_package
+bazel-bin/tensorflow/tools/pip_package/build_pip_package pippkg
+pip install -U pippkg/tensorflow-1.4.0-cp35-cp35m-linux_x86_64.whl
+
+Movidius NCS
+(
+    No virtual env is needed
+    All python scripts must begin with
+    #! /usr/bin/env python3
+)
+
+cd Desktop/Movidius/ncsdk/examples/tensorflow/inception_v3
+
+To generate a meta file (SaveGraph) from Checkpoint (ckpt)
+inception-v3.py
+
+To generate a Graph file from a meta file
+Either:
+make compile
+Or:
+mvNCCompile output/inception-v3.meta -in=<input_node> -on=<output_node> -s12
+
+E.g.
+mvNCCompile output/inception-v3.meta -in=input -on=InceptionV3/Predictions/Softmax -s12
+
+To convert a meta file to protobuffer (pb) file
+meta2pb.py
+Notes:
+tf.placeholder add input node with name defined by 'name' parameter
+Output node is defined as something like:
+	predictions = tf.nn.sigmoid(logits, name='outputname')
+output_node_names shall contains both the input nodes and output nodes
+When imported, make sure the prefix 'import' is used:
+	import/input; import/outputname; etc..
+	e.g. mvNCCompile output/inception-v3.pb -in=import/input -on=import/outputname -s12
+
+To generate a graph (progile)
+make profile
+
+
